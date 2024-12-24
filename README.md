@@ -58,6 +58,124 @@ services:
    - Click the **Admin** button to log in with your credentials.
    - Once logged in, specify a custom folder name where the files will be downloaded.
 -->
+# Nix Module Installation
+
+The playlistdl service can be installed and configured as a NixOS module. This guide explains how to set up and configure the service using Nix flakes.
+
+## Quick Start
+
+1. Add the flake to your NixOS configuration flake:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    playlistdl.url = "github:yourusername/playlistdl"; # Replace with your repo URL
+  };
+}
+```
+
+2. Import and enable the service in your NixOS configuration:
+
+```nix
+{
+  imports = [ 
+    # Import the module
+    inputs.playlistdl.nixosModules.default 
+  ];
+
+  # Enable and configure the service
+  services.playlistdl = {
+    enable = true;
+    port = 5005;  # Default is 5000
+    settings = {
+      audioDownloadPath = "/path/to/downloads";
+      cleanupInterval = "300";
+      # Optional authentication
+      adminUsername = "admin";
+      adminPassword = "secretpassword";
+    };
+  };
+}
+```
+
+## Configuration Options
+
+### Basic Options
+
+- `enable`: Boolean to enable/disable the service
+- `port`: Port number for the web interface (default: 5000)
+
+### Environment Variables
+
+All environment variables are configured through the `settings` attribute set using camelCase notation. They are automatically converted to SCREAMING_SNAKE_CASE environment variables.
+
+Example conversions:
+- `audioDownloadPath` → `AUDIO_DOWNLOAD_PATH`
+- `cleanupInterval` → `CLEANUP_INTERVAL`
+- `adminUsername` → `ADMIN_USERNAME`
+
+### Common Settings
+
+```nix
+settings = {
+  # Required
+  audioDownloadPath = "/path/to/downloads";  # Directory for downloaded files
+  
+  # Optional
+  cleanupInterval = "300";     # Cleanup interval in seconds
+  adminUsername = "admin";     # Admin interface username
+  adminPassword = "password";  # Admin interface password
+};
+```
+
+## Permissions and Storage
+
+The service runs as the `playlistdl` user and group. The specified `audioDownloadPath` will be:
+- Created automatically if it doesn't exist
+- Owned by the playlistdl user and group
+- Set with permissions 750 (rwxr-x---)
+
+## Firewall Configuration
+
+The service automatically configures the firewall to allow incoming connections on the specified port.
+
+## Systemd Service Management
+
+Once installed, you can manage the service using standard systemd commands:
+
+```bash
+# Start the service
+sudo systemctl start playlistdl
+
+# Check status
+sudo systemctl status playlistdl
+
+# View logs
+sudo journalctl -u playlistdl
+
+# Restart service
+sudo systemctl restart playlistdl
+```
+
+## Upgrading
+
+To upgrade the service, update the flake input in your NixOS configuration and rebuild:
+
+```bash
+sudo nixos-rebuild switch
+```
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **Service won't start**: Check logs with `journalctl -u playlistdl`
+2. **Permission denied**: Ensure `audioDownloadPath` is accessible by the playlistdl user
+3. **Port already in use**: Change the port number in your configuration
+4. **Environment variables not set**: Verify your settings in the NixOS configuration
+
+For more help, check the [project repository](https://github.com/yourusername/playlistdl) or open an issue.
 ## Configuration
 
 ### Environment Variables
